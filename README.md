@@ -4,5 +4,9 @@ crashes in versions and packages that will appear in the future. Remember to use
 for pyannote ¬¬
 
 ```bash
+alias transcript="python3.10 $HOME/Projects/extract-transcript/main.py"
+```
+
+```bash
 pip install whisper openai-whisper pyannote-audio torch torchvision torchaudio
 ```

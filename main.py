@@ -4,12 +4,11 @@ import sys
 import os
 import signal
 from pyannote.audio import Pipeline
-from pyannote.core import Segment
 
 class TimeoutException(Exception):
     pass
 
-def timeout_handler(signum, frame):
+def timeout_handler(_, __):
     raise TimeoutException
   
 # Define o manipulador de sinal para o alarme
@@ -22,13 +21,13 @@ token = ""
 
 # Verifica se o caminho do arquivo foi fornecido
 if len(sys.argv) < 2:
-    print("Uso: python script.py <caminho_do_audio> <mais_de_um_falante=y|n>")
+    print("Uso: python script.py <caminho_do_audio> <numero_de_oradores=1>")
     sys.exit(1)
 
 # Obtém o caminho do arquivo de áudio da linha de comando
 audio_path = sys.argv[1]
-more_than_one_speaker = sys.argv[2] if len(sys.argv) > 2 else "n"
-print(f"Mais que um falante? {more_than_one_speaker}")
+num_of_speakers = int(sys.argv[2] if len(sys.argv) > 2 else 1)
+print(f"Quantidade de oradores? {num_of_speakers}")
 print(f"Processando áudio: {audio_path}")
 
 # Verifica se o arquivo existe
@@ -43,7 +42,7 @@ transcription = []
 print("Carregando Whisper...")
 model = whisper.load_model("medium").to(device)
 
-if more_than_one_speaker == "n":
+if num_of_speakers < 2:
     # Processa todo o áudio de uma vez
     print("Transcrevendo todo o áudio...")
     result = model.transcribe(audio_path, language="pt")
@@ -57,7 +56,7 @@ else:
 
     # Roda a diarização no áudio
     print("Identificando falantes...")
-    diarization = diarization_pipeline(audio_path)
+    diarization = diarization_pipeline(audio_path, num_speakers=num_of_speakers)
 
     # Processa cada segmento de fala identificado
     print("Transcrevendo segmentos de fala...")
@@ -67,7 +66,7 @@ else:
             start, end = turn.start, turn.end
             print(f"Falante {speaker}: {start:.2f}s - {end:.2f}s")
             
-            timeout = int((end - start) * 10)
+            timeout = int((end - start) * 30)
             signal.alarm(timeout)
 
             # Extrai segmento de áudio
